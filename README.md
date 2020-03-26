@@ -7,6 +7,7 @@
 ## Models: 
 1. CNN with data augmentation (i.e., random flip and random rotation) and imbalanced data sampler(pytorch, TLClassifier.py)
 2. SVM, KNN, Random Forest, and MLP with hyperparameter tuning (sklearn, sklearnClassifier.py)
+3. CNN regressor
 
 ## CNN (Modified LeNet)
 
@@ -26,3 +27,8 @@
 ![SVM precision-recall curve][SVM_pr]
 
 [SVM_pr]: https://github.com/psychogeekir/ImageClassifier/blob/master/SVC_result/SVC_PR.png "SVM precision-recall curve"
+
+
+## CNN regressor
+
+
