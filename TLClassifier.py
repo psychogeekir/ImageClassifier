@@ -303,7 +303,7 @@ class RandomFlip(object):
 class Resize(object):
     """Resize"""
 
-    def __init__(self, size, interpolation=1):
+    def __init__(self, size, interpolation=2, zero_padding=False):
 
         # 'Image.NEAREST (0)', 'Image.LANCZOS (1)', 'Image.BILINEAR (2)',
         # 'Image.BICUBIC (3)', 'Image.BOX (4)', 'Image.HAMMING (5)'
@@ -316,10 +316,32 @@ class Resize(object):
             self.size = (int(size[0]), int(size[1]))
 
         self.interpolation = interpolation
+        self.zero_padding = zero_padding
 
     def __call__(self, sample):
         image, bandgap, label = sample['image'], sample['bandgap'], sample['label']
-        image = transforms.Resize(self.size, interpolation=self.interpolation)(image)
+
+        # plt.figure()
+        # plt.imshow(image, cmap='gray')
+        # plt.show()
+
+        h_diff = self.size[0] - image.height
+        w_diff = self.size[1] - image.width
+
+        if self.zero_padding and h_diff > 0 and w_diff > 0:
+            # Hashemi, M. (2019). “Enlarging smaller images before inputting into convolutional neural network:
+            #        zero-padding vs. interpolation.” J. Big Data, Springer International Publishing, 6(1).
+            pad = (w_diff//2, w_diff - w_diff//2, h_diff//2, h_diff - h_diff//2)
+            image_tensor = torch.from_numpy(np.transpose(np.array(image), (2, 0, 1))/255).unsqueeze(0)
+            # 'constant', 'reflect', 'replicate' or 'circular'. Default: 'constant'
+            image_tensor_padded = torch.nn.functional.pad(image_tensor, pad=pad, mode='constant')
+            image = Image.fromarray(255*np.transpose(image_tensor_padded.squeeze(0).numpy(), (1, 2, 0)).astype(np.uint8))
+        else:
+            image = transforms.Resize(self.size, interpolation=self.interpolation)(image)
+
+        # plt.figure()
+        # plt.imshow(image, cmap='gray')
+        # plt.show()
 
         return {'image': image,
                 'bandgap': bandgap,
@@ -479,6 +501,8 @@ class LeNet(nn.Module):
         )
 
         self.fc = nn.Sequential(
+            nn.Dropout(0.5),
+
             nn.Linear(16 * 5 * 5, 120),
             nn.BatchNorm1d(120),
             nn.ReLU(inplace=True),
@@ -491,8 +515,6 @@ class LeNet(nn.Module):
 
             nn.Linear(84, 1),
         )
-
-
 
     def forward(self, x):
         output = self.conv(x)
@@ -902,6 +924,11 @@ if __name__ == '__main__':
     n_cpu = 0   # set this to 0 to use GPU in Windows
     n_gpu = 0
 
+    # Resize interpolation mode: 'Image.NEAREST (0)', 'Image.LANCZOS (1)', 'Image.BILINEAR (2)',
+    #                            'Image.BICUBIC (3)', 'Image.BOX (4)', 'Image.HAMMING (5)'
+    interpolation = 3
+    zero_padding = True  # if True, interpolation is ignored, use zero to enlarge small images
+
     use_pretrained = False
 
     n_epochs = 300
@@ -980,12 +1007,10 @@ if __name__ == '__main__':
         mean = [0.5, 0.5, 0.5]
         std = [0.5, 0.5, 0.5]
 
-    # Resize interpolation mode: 'Image.NEAREST (0)', 'Image.LANCZOS (1)', 'Image.BILINEAR (2)',
-    #                            'Image.BICUBIC (3)', 'Image.BOX (4)', 'Image.HAMMING (5)'
     topoDataset = TopoDataset(alldata, img_size,
                               transform=transforms.Compose([QuarterCrop(img_size / 2),
                                                             ToPILImage(),
-                                                            Resize(input_size, interpolation=3),  # LeNet
+                                                            Resize(input_size, interpolation=interpolation, zero_padding=zero_padding),  # LeNet
                                                             ToTensor(),
                                                             Normalize(mean, std)]))
 
@@ -1008,7 +1033,7 @@ if __name__ == '__main__':
                                                           RandomFlip(0.5),  # data augmentation for training set
                                                           RandomRotation([0, 90, 180, 270]),  # data augmentation for training set
                                                           # transforms.RandomChoice([RandomRotation([0, 90, 180, 270]), RandomFlip()]),
-                                                          Resize(input_size, interpolation=3),  # LeNet
+                                                          Resize(input_size, interpolation=interpolation, zero_padding=zero_padding),  # LeNet
                                                           ToTensor(),
                                                           Normalize(mean, std)]))
     plotDataset(train_set, mean, std, nsamples=4)
@@ -1019,7 +1044,7 @@ if __name__ == '__main__':
     # train_size = len(train_set)
     # train_set.transform = transforms.Compose([QuarterCrop(img_size / 2),
     #                                           ToPILImage(),
-    #                                           Resize(input_size, interpolation=3),  # LeNet
+    #                                           Resize(input_size, interpolation=interpolation, zero_padding=zero_padding),  # LeNet
     #                                           ToTensor(),
     #                                           Normalize(mean, std)])
     # plotDataset(train_set, mean, std, nsamples=4)
@@ -1028,7 +1053,7 @@ if __name__ == '__main__':
     val_set = TopoDataset(alldata.iloc[val_idx, :], img_size,
                             transform=transforms.Compose([QuarterCrop(img_size / 2),
                                                           ToPILImage(),
-                                                          Resize(input_size, interpolation=3),  # LeNet
+                                                          Resize(input_size, interpolation=interpolation, zero_padding=zero_padding),  # LeNet
                                                           ToTensor(),
                                                           Normalize(mean, std)]))
     plotDataset(val_set, mean, std, nsamples=4)
@@ -1153,8 +1178,8 @@ if __name__ == '__main__':
     # optimizer = optim.Adam(net.classifier.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)  # weight_decay is the L2 penalty coefficient
 
     ## lenet: 3 x 32 x 32
-    # net = LeNet(3, n_gpu).to(device)
-    net = LeNet_small(3, n_gpu).to(device)
+    net = LeNet(3, n_gpu).to(device)
+    # net = LeNet_small(3, n_gpu).to(device)
     # net = LeNet_gap(3, n_gpu).to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)  # weight_decay is the L2 penalty coefficient
