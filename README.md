@@ -7,7 +7,7 @@
 ## Models: 
 1. CNN with data augmentation (i.e., random flip and random rotation) and imbalanced data sampler(pytorch, TLClassifier.py)
 2. SVM, KNN, Random Forest, and MLP with hyperparameter tuning (sklearn, sklearnClassifier.py)
-3. CNN regressor
+3. CNN regressor: zero_padding enlarging mode in Resize(), target variable normalization techniques (sklearn)
 
 ## CNN (Modified LeNet)
 
@@ -31,4 +31,9 @@
 
 ## CNN regressor
 
+![CNN regressor loss][CNN regressor loss]
 
+![CNN regressor r2][CNN regressor r2]
+
+[CNN regressor loss]: https://github.com/psychogeekir/ImageClassifier/blob/master/TLRegressor_result/compare_runningloss.png "CNN regression loss"
+[CNN regressor r2]: https://github.com/psychogeekir/ImageClassifier/blob/master/TLRegressor_result/nn_scatter.png "CNN true v.s. prediction"
