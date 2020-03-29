@@ -120,17 +120,17 @@ class BBBConv2d_ard(ModuleWrapper):
         self.log_sigma2 = Parameter(ard_init * torch.ones_like(self.weight))
         self.max_log_alpha = max_log_alpha
         self.ard_init = ard_init
-        self.reset_parameters()
+        # self.reset_parameters()
         self.name = name
         self.record_cfg = BNN_record_cfg
         if self.record_cfg['record_mean_var']:
             self.mean_var_path = self.record_cfg['mean_var_savepath'] + "/{}.txt".format(self.name)
 
-    def reset_parameters(self):
-        self.weight.data.normal_(std=0.01)
-        if self.bias is not None:
-            self.bias.data.uniform_(0, 0)
-        self.log_sigma2.data = self.ard_init*torch.ones_like(self.log_sigma2)
+    # def reset_parameters(self):
+    #     self.weight.data.normal_(std=0.01)
+    #     if self.bias is not None:
+    #         self.bias.data.uniform_(0, 0)
+    #     self.log_sigma2.data = self.ard_init*torch.ones_like(self.log_sigma2)
 
     def forward(self, x):
         # x: batch_size x in_channels x height x width
@@ -139,7 +139,7 @@ class BBBConv2d_ard(ModuleWrapper):
         mean = self.out_bias(x, self.weight)
 
         # clamp alpha
-        log_alpha = self.clip(self.log_alpha, self.max_log_alpha)
+        log_alpha = self.clip(self.log_alpha, to=self.max_log_alpha)
 
         # sigma weight: out_channels x in_channels x height x width
         # due to broadcasting rule, log_alpha at most can be in the size (out_channels x in_channels x height x width)

@@ -97,7 +97,7 @@ class BBBLinear_ard(ModuleWrapper):
         # the size of alpha affect the computation efficiency
 
         self.weight = Parameter(torch.Tensor(out_features, in_features))  # optimization
-        self.log_sigma2 = Parameter(ard_init * torch.ones_like(self.weight))  # optimization
+        self.log_sigma2 = Parameter(torch.Tensor(out_features, in_features))  # optimization
         self.max_log_alpha = max_log_alpha
         self.ard_init = ard_init
         if bias:
@@ -125,7 +125,7 @@ class BBBLinear_ard(ModuleWrapper):
             mean = mean + self.bias
 
         # clamp alpha
-        log_alpha = self.clip(self.log_alpha, self.max_log_alpha)
+        log_alpha = self.clip(self.log_alpha, to=self.max_log_alpha)
 
         # sigma weight: out_features x in_features
         # due to broadcasting rule, log_alpha at most can be in the size (out_features x in_features)
