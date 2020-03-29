@@ -20,8 +20,11 @@ class negative_ELBO(nn.Module):
         # negative log-likelihood + weight * KL divergence
         # in classification problem, input is the logsoftmax of direct output of NN
 
-        negative_loglikelihood = F.nll_loss(input, target, reduction=self.reduction) * input.size(0)
-        total_loss = negative_loglikelihood + self.kl_weight * kl / self.num_batches
+        negative_loglikelihood = F.nll_loss(input, target, reduction=self.reduction)
+        total_loss = negative_loglikelihood + self.kl_weight * kl
+
+        # negative_loglikelihood = F.nll_loss(input, target, reduction=self.reduction) * input.size(0)
+        # total_loss = negative_loglikelihood + self.kl_weight * kl / self.num_batches
 
         # negative_loglikelihood = F.nll_loss(input, target, reduction=self.reduction)
         # total_loss = negative_loglikelihood * self.train_size + self.kl_weight * kl
