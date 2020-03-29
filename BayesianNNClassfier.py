@@ -597,9 +597,16 @@ class BayesLeNet_ard(ModuleWrapper):
                           name='fc3', BNN_record_cfg=BNN_record_cfg),
         )
 
+        self._init_weights()
+
     # def forward(self, x):
     #     output = self.model(x)
     #     return output
+
+    def _init_weights(self):
+        for layer in self.model:
+            if hasattr(layer, 'weight'):
+                nn.init.xavier_uniform_(layer.weight.data, gain=nn.init.calculate_gain('relu'))
 
     def update_record_cfg(self, BNN_record_cfg):
         # this a make-sure, actually since BNN_record_cfg is used in the initialization of this net and is a dictionary,
@@ -956,7 +963,8 @@ if __name__ == '__main__':
         'curr_epoch_no': None,
         'curr_batch_no': None,
     }
-    kl_weight = 1e-4
+    kl_weight = 1e-5  # For BBBConv_ard
+    # kl_weight = 1e-4  # for BBBConv
 
     classes = ('success', 'failure')  # 0: success, 1: failure
     num_classes = 2
@@ -1226,8 +1234,8 @@ if __name__ == '__main__':
     # optimizer = optim.Adam(net.classifier.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)  # weight_decay is the L2 penalty coefficient
 
     ## bayesian lenet: 3 x 32 x 32
-    net = BayesLeNet(3, n_gpu, num_classes, BNN_record_cfg).to(device)
-    # net = BayesLeNet_ard(3, n_gpu, num_classes, BNN_record_cfg).to(device)
+    # net = BayesLeNet(3, n_gpu, num_classes, BNN_record_cfg).to(device)
+    net = BayesLeNet_ard(3, n_gpu, num_classes, BNN_record_cfg).to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)  # weight_decay is the L2 penalty coefficient
 
@@ -1348,26 +1356,26 @@ if __name__ == '__main__':
     plotPRCurve(precision, recall, no_skill, close_default_clf=None, result_savepath=result_savepath + '/nn_PR.png', model_name='Neural Network')
 
     ## plot weight distribution
-    draw_lineplot(filename=BNN_record_cfg['mean_var_savepath'] + '/' + 'fc3.txt',
-                  save_dir=result_savepath,
-                  type='mean',
-                  node_no=0,
-                  save_plots=True,
-                  plot_time=5, )
-
-    draw_lineplot(filename=BNN_record_cfg['mean_var_savepath'] + '/' + 'fc3.txt',
-                  save_dir=result_savepath,
-                  type='std',
-                  node_no=0,
-                  save_plots=True,
-                  plot_time=5, )
-
-    draw_distributions(filename=BNN_record_cfg['mean_var_savepath'] + '/' + 'fc3.txt',
-                  save_dir=result_savepath,
-                  type='both',
-                  node_no=0,
-                  save_plots=True,
-                  plot_time=5, )
+    # draw_lineplot(filename=BNN_record_cfg['mean_var_savepath'] + '/' + 'fc3.txt',
+    #               save_dir=result_savepath,
+    #               type='mean',
+    #               node_no=0,
+    #               save_plots=True,
+    #               plot_time=5, )
+    #
+    # draw_lineplot(filename=BNN_record_cfg['mean_var_savepath'] + '/' + 'fc3.txt',
+    #               save_dir=result_savepath,
+    #               type='std',
+    #               node_no=0,
+    #               save_plots=True,
+    #               plot_time=5, )
+    #
+    # draw_distributions(filename=BNN_record_cfg['mean_var_savepath'] + '/' + 'fc3.txt',
+    #               save_dir=result_savepath,
+    #               type='both',
+    #               node_no=0,
+    #               save_plots=True,
+    #               plot_time=5, )
 
 ##
 
